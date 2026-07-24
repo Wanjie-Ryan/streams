@@ -19,3 +19,18 @@
 - Broker: Apache kafka in docker, KRaft mode (no zookeeper) - single broker.
 - Kafka ui - web dashboard to see your topics, partitions, consumer groups, and lag.
 
+- Broker is a single kafka server process.
+- Partition is a topic that has been split.
+- demo topic:
+  Partition 0:  [off0][off1][off2][off3] →
+  Partition 1:  [off0][off1] →
+  Partition 2:  [off0][off1][off2] →
+
+
+- imagine a topic called bet-placed. Instead of one giant list of every bet ever placed, kafka splits it into, say, 3 partitions:
+    Partition 0: [msg] [msg] [msg] [msg] ...
+    Partition 1: [msg] [msg] [msg] [msg] ...
+    Partition 2: [msg] [msg] [msg] [msg] ...
+
+- Why split it up?
+1. Parallelism: different partitions can be processed by different consumers at the same time.

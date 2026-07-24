@@ -1,0 +1,41 @@
+# single broker KRaft + UI. Dual listener (host/docker) is what lets your host GO app and the in-network UI both reach the broker.
+# spins up a single kafka broker using KRaft mode (no Zookeeper) and a Kafka UI for monitoring. The broker is configured with dual listeners so that both the host machine and the in-network UI can reach it.
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1 # every node in kafka cluster needs a unique ID, since this is a single node, its just 1.
+      KAFKA_PROCESS_ROLES: broker,controller # in KRaft, nodes normally split into "broker" (handles data) and "controller" (handles leader elecion, replacing zookeeper). This node plays both roles.
+      KAFKA_LISTENERS: HOST://:9092,DOCKER://:29092,CONTROLLER://:9093 
+      # 3 listeners: Host is for stuff outside docker, like GO service that connects via localhost:9092
+      # Docker is for stuff inside docker, like the kafka-UI that connects via kafka:29092
+      # Controller is for internal controller communication, not used by clients.
+      KAFKA_ADVERTISED_LISTENERS: HOST://localhost:9092,DOCKER://kafka:29092
+      # advertised listeners how clients communicate to kafka running inside docker, maps localhost:9092 from host machine to Docker kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,HOST:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+
+# kafka container boots, auto-formats its KRaft storage on first run, and starts as both broker and controller.
+# kafka ui waits for kafka, then connects and registers the local cluster.
+# you'll be able to open localhost:8080 and see the cluster, topics, and be able to create topics/produce and consume messages.
+# Go app on host machine connect via localhost:9092
