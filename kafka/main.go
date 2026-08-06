@@ -48,12 +48,26 @@ func main() {
 func runProducer(app *router.App) {
 	defer app.KafkaWriter.Close()
 
-	for i := 1; i <= 5; i++ {
-		payload := map[string]any{"id": i, "message": "intro to kafka"}
-		if err := library.PublishMessage(context.Background(), app.KafkaWriter, "user-1", payload); err != nil {
-			log.Fatalf("Failed to publish message: %v", err)
+	// for i := 1; i <= 5; i++ {
+	// 	payload := map[string]any{"id": i, "message": "intro to kafka"}
+	// 	if err := library.PublishMessage(context.Background(), app.KafkaWriter, "user-1", payload); err != nil {
+	// 		log.Fatalf("Failed to publish message: %v", err)
+	// 	}
+	// 	log.Printf("published message %d", i)
+	// }
+	// log.Printf("done publishing")
+
+	// DIFFERENT PARTITIONSS
+	keys := []string{"user-1", "user-2", "user-3", "user-4", "user-5", "user-6"}
+
+	for _, key := range keys{
+		for seq :=1; seq <=3; seq++{
+			payload := map[string]any{"user":key, "seq": seq, "message":"phase 2 keys"}
+			if err := library.PublishMessage(context.Background(), app.KafkaWriter, key, payload); err != nil {
+				log.Fatalf("Failed to publish message: %v", err)
+			}
+			log.Printf("published message | key=%s seq=%d", key, seq)
 		}
-		log.Printf("published message %d", i)
 	}
 	log.Printf("done publishing")
 }
