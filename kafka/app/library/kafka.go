@@ -44,3 +44,16 @@ func PublishMessage(ctx context.Context, w *kafka.Writer, key string, payload in
 
 	return nil
 }
+
+// creating the kafka reader
+func GetKafkaReader(brokers []string, topic, groupID string) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers:     brokers,
+		Topic:       topic,
+		GroupID:     groupID,           // kafka assigns partitions & tracks offsets for us
+		StartOffset: kafka.FirstOffset, // only the first time this group runs; start reading at the beginning. This is only applied first time, once the group has a bookmark, this is ignored and it resumes from the bookmark.
+		MinBytes:    1,                 // fetch as little as 1 byte
+		MaxBytes:    10e6,              // upto 10 MB per request
+
+	})
+}

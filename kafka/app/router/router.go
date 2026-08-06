@@ -11,15 +11,17 @@ import (
 )
 
 type App struct {
+	Brokers     []string
+	Topic       string
 	KafkaWriter *kafka.Writer
 }
 
 func (a *App) Initialize() {
-	brokers := getBrokers()
-	topic := os.Getenv("KAFKA_TOPIC")
-	a.KafkaWriter = library.GetKafkaWriter(brokers, topic)
+	a.Brokers = getBrokers()
+	a.Topic = os.Getenv("KAFKA_TOPIC")
+	a.KafkaWriter = library.GetKafkaWriter(a.Brokers, a.Topic)
 
-	log.Printf("kafka writer is read || brokers=%v topic%s", brokers, topic)
+	log.Printf("kafka writer is read || brokers=%v topic=%s", a.Brokers, a.Topic)
 
 }
 
