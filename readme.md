@@ -57,3 +57,38 @@
 - Contrary to Rabbit where when the consumer reads and acknowledges the messages, the message is removed from the queue, while kafka persists that message until a certain period is over, whether the message has been read or not.
 
 - A broker is single kafka server process, the one kafka container I spun up is one broker. Kafka as a whole is a cluster of brokers working together; 
+
+# Reliability
+- Producer durability (don't lose messages on the way in) and consumer resilience (retries + DLQ on the way out).
+
+- if you retry a bad message forever in place, you freeze the whole partition - every message behind it waits.
+- Hence a bounded number of retries, then get it out of the way DLQ, and keep moving.
+- DLQ - **normal topic(<topic>.DLT)** where failures go with diagnostic headers, for a human or separate repair process to inspect.
+
+
+# DLQ
+- Kafka has no built in DLQ, so you to implement it yourself, by creating a topic. eg demo.DLT
+- consume → try to process (with a few retries) → still failing? → publish to demo.DLT (with error headers) → commit → move on
+- its whole purpose is to get the posion message out of the way so one bad record doesn't freeze the partition behind it, while preserving it for later inspection instead of silently dropping it.
+
+# DIFFERENCE BTN KAFKA AND RABBIT
+**The core difference: Kafka is a durable log; RabbitMQ is a message broker/queue.** From that, Kafka's wins:
+
+| | Kafka | RabbitMQ |
+|---|---|---|
+| **Model** | Retained log — messages stay after being read | Queue — message deleted on ack |
+| **Replay** | ✅ Rewind offsets, re-read history | ❌ Once acked, it's gone |
+| **Throughput** | Very high (millions/sec), scales via partitions | Lower ceiling |
+| **Fan-out** | Many consumer groups each read *all* messages cheaply | Needs extra queues/bindings per consumer |
+| **Ordering** | Guaranteed per partition | Weaker under concurrency/redelivery |
+| **Retention / event sourcing** | ✅ Built for it; source-of-truth log | Not designed for it |
+| **Ecosystem** | Streams, Connect, ksqlDB for stream processing | Mostly messaging |
+
+- choose kafka when you need high-throughput streaming, replay, retention, or many independent consumers of the same data.
+- Where RabbitMQ shines:
+i. Flexible routing 
+ii. Built in DLQ + retries
+iii. Priority queues, per-message TTL
+iv. Lower latency.
+
+- Kafka = event streaming & data pipelines; RabbitMQ = task distribution & flexible message routing.

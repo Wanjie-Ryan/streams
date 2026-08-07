@@ -13,11 +13,13 @@ import (
 
 func GetKafkaWriter(brokers []string, topic string) *kafka.Writer {
 
+	// ensure CONSUMER DURABILITY
 	return &kafka.Writer{
 		Addr:         kafka.TCP(brokers...),
 		Topic:        topic,
 		Balancer:     &kafka.Hash{},    // picks partition by hashing the key
 		RequiredAcks: kafka.RequireAll, // wait for all in-sync replicas before ack
+		MaxAttempts:  10,               // retry up to 10 times
 	}
 }
 
@@ -56,4 +58,16 @@ func GetKafkaReader(brokers []string, topic, groupID string) *kafka.Reader {
 		MaxBytes:    10e6,              // upto 10 MB per request
 
 	})
+}
+
+// DLQ - Dead Letter Queue - a topic where failures go with diagnostic headers, for a human or separate repair process to inspect
+
+func GetDLQWriter(brokers []string, topic string) *kafka.Writer{
+	return &kafka.Writer{
+		Addr: kafka.TCP(brokers...),
+		Topic: topic,
+		Balancer: &kafka.Hash{},
+		RequiredAcks: kafka.RequireAll,
+		AllowAutoTopicCreation: true, // allow auto-creation of the DLQ topic if it doesn't exist
+	}
 }

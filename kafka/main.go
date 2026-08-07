@@ -78,9 +78,12 @@ func runConsumer(app *router.App) {
 
 	defer reader.Close() // leave the group cleanly & commits final offsets
 
+	dlq := library.GetDLQWriter(app.Brokers, app.Topic+".DLT")
+	defer dlq.Close()
+
 	// graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	(&consumers.Consumer{Reader: reader}).Start(ctx)
+	(&consumers.Consumer{Reader: reader, DLQ: dlq}).Start(ctx)
 
 }
