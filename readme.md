@@ -92,3 +92,6 @@ iii. Priority queues, per-message TTL
 iv. Lower latency.
 
 - Kafka = event streaming & data pipelines; RabbitMQ = task distribution & flexible message routing.
+
+# RABBITMQ
+- 
