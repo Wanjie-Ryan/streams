@@ -94,4 +94,14 @@ iv. Lower latency.
 - Kafka = event streaming & data pipelines; RabbitMQ = task distribution & flexible message routing.
 
 # RABBITMQ
-- 
+- In kafka, routing was an opaque hash(key) %partitions. In rabbit, you define routing explicitly; a producer publishes to an **exchange** with **routing key** and **bindings** decide which queues get a copy - one message can land in many queues, or none.
+
+### The three exchange types
+
+| Type | Routing behavior |
+|---|---|
+| **fanout** | ignores the routing key — copies to **every** bound queue (broadcast / pub-sub) |
+| **direct** | delivers to queues whose binding key **exactly equals** the routing key |
+| **topic** | delivers to queues whose binding **pattern** matches the routing key (`*` = exactly one word, `#` = zero or more words; words split by `.`) |
+
+We'll build a **topic** exchange (the most powerful — it can do exact match *and* broadcast), then you'll flip it to fanout/direct to feel the difference.
